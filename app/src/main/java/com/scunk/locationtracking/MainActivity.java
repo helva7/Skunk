@@ -34,13 +34,20 @@ public class MainActivity extends AppCompatActivity {
     private TextView longitude;
     private TextView accuracy;
     private TextView speed;
+    private ToggleButton OnOff;
+
+    //private double latitudeGPS = 0.0;
+    //private double longitudeGPS = 0.0;
+    //private double speedGPS = 0.0;
+
 
     /* create an instance of a client */
     private FusedLocationProviderClient fusedLocationProviderClient;
     private static final int MY_PERMISSION_FINE_LOCATION = 101;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
-    private boolean updateOn = false; // REMOVE later on
+    private boolean updateOn = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         longitude = findViewById(R.id.tvLongitude);
         accuracy = findViewById(R.id.tvAccuracy);
         speed = findViewById(R.id.tvSpeed);
+        OnOff = findViewById(R.id.tbLocationUpdates);
 
 
         /*
@@ -65,6 +73,21 @@ public class MainActivity extends AppCompatActivity {
         locationRequest.setFastestInterval(4000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
+
+        OnOff.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (OnOff.isChecked()) {
+                    //location updates are on
+                    updateOn = true;
+                    startLocationUpdates();
+                } else {
+                    //location updates are off
+                    updateOn = false;
+                    stopLocationUpdates();
+                }
+            }
+        });
 
         // https://developer.android.com/training/permissions/requesting#java  --> explanation of accessing and handling permissions
         // created fusedlocation provider client
@@ -116,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
                             speed.setText("No speed available");
                         }
                     }
-
                 }
             }
         };
