@@ -14,6 +14,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -33,10 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView longitude;
     private TextView accuracy;
     private TextView speed;
-    private TextView sensorType;
-    private TextView updatesOnOff;
-    private ToggleButton switchOffGPS;
-    private ToggleButton locationOnOff;
+
     /* create an instance of a client */
     private FusedLocationProviderClient fusedLocationProviderClient;
     private static final int MY_PERMISSION_FINE_LOCATION = 101;
@@ -56,54 +54,22 @@ public class MainActivity extends AppCompatActivity {
         longitude = findViewById(R.id.tvLongitude);
         accuracy = findViewById(R.id.tvAccuracy);
         speed = findViewById(R.id.tvSpeed);
-        sensorType = findViewById(R.id.tvSensor);
-        updatesOnOff = findViewById(R.id.tvUpdates);
-        switchOffGPS = findViewById(R.id.tbGPS);
-        locationOnOff = findViewById(R.id.tbLocationUpdates);
 
-        // https://developers.google.com/android/reference/com/google/android/gms/location/LocationRequest
+
+        /*
+        https://developers.google.com/android/reference/com/google/android/gms/location/LocationRequest --> info on priority
+        https://developers.google.com/android/reference/com/google/android/gms/location/LocationRequest#setInterval(long) --> info on set priority intervals in miliseconds
+        */
         locationRequest = new LocationRequest();
         locationRequest.setInterval(5000); // 5 seconds for update intervals
         locationRequest.setFastestInterval(4000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
-
-        /* set up listeners for toggle buttons*/
-        switchOffGPS.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //using GPS only
-                if (switchOffGPS.isChecked()) {
-                    sensorType.setText("GPS");
-                    locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-                } else {
-                    //using cell towers and wifi
-                    sensorType.setText("Cell Towers and WiFi");
-                    locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-                }
-            }
-        });
-
-        locationOnOff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (locationOnOff.isChecked()) {
-                    //location updates are on
-                    updatesOnOff.setText("On");
-                    updateOn = true;
-                    startLocationUpdates();
-                } else {
-                    //location updates are off
-                    updatesOnOff.setText("Off");
-                    updateOn = false;
-                    stopLocationUpdates();
-                }
-            }
-        });
 
         // https://developer.android.com/training/permissions/requesting#java  --> explanation of accessing and handling permissions
         // created fusedlocation provider client
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
 
         /* added permission check */
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {

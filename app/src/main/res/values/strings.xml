@@ -2,19 +2,11 @@
     <string name="app_name">LocationTracking</string>
     <string name="action_settings">Settings</string>
     <string name="textview">TextView</string>
-    <string name="cell_tower_and_wifi">Cell Tower and WiFi</string>
-    <string name="off">Off</string>
-    <string name="updates">Updates</string>
-    <string name="togglebutton">ToggleButton</string>
-    <string name="swith_on_gps">Swith on GPS</string>
-    <string name="switch_off_gps">Switch off GPS</string>
-    <string name="sensor">Sensor</string>
+
     <string name="speed">Speed</string>
     <string name="accuracy">Accuracy</string>
     <string name="longitude">Longitude</string>
     <string name="latitude">Latitude</string>
-    <string name="turn_on_location_updates">Turn On Location Updates</string>
-    <string name="turn_off_location_updates">Turn Off Location Updates</string>
-    <string name="gps_on">Turn GPS On</string>
-    <string name="gps_off">Turn GPS Off</string>
+
+
 </resources>
