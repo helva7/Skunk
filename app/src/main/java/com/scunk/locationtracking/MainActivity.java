@@ -27,6 +27,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -287,34 +288,42 @@ public class MainActivity extends AppCompatActivity {
 
         String url = "http://192.168.0.14/android_connect/backend.php";
 
-        Map<String, String> jsonLatLong = new HashMap<String, String>();
+        Map<String, String> jsonLatLong = new HashMap<>();
 
         jsonLatLong.put("latitude", latitude);
         jsonLatLong.put("longitude", longitude);
 
-        JsonObjectRequest postRequest = new JsonObjectRequest( Request.Method.POST, url,
 
-                new JSONObject(jsonLatLong),
-                new Response.Listener<JSONObject>() {
+        StringRequest strRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>()
+                {
                     @Override
-                    public void onResponse(JSONObject response) {
+                    public void onResponse(String response)
+                    {
+                        Toast.makeText(getApplicationContext(), response, Toast.LENGTH_SHORT).show();
                     }
                 },
-                new Response.ErrorListener() {
+                new Response.ErrorListener()
+                {
                     @Override
-                    public void onErrorResponse(VolleyError error) {
-                        //   Handle Error
+                    public void onErrorResponse(VolleyError error)
+                    {
+                        Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT).show();
                     }
-                }) {
+                })
+        {
             @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                HashMap<String, String> headers = new HashMap<String, String>();
-                headers.put("Content-Type", "application/json; charset=utf-8");
-                headers.put("User-agent", System.getProperty("http.agent"));
-                return headers;
+            protected Map<String, String> getParams()
+            {
+                Map<String, String> jsonLatLong = new HashMap<>();
+
+                jsonLatLong.put("latitude", "56.789123");
+                jsonLatLong.put("longitude", "-6.12345");
+                return jsonLatLong;
             }
         };
-        requestQueue.add(postRequest);
+
+        requestQueue.add(strRequest);
 
     };
 
