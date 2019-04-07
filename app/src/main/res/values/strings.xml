@@ -3,6 +3,12 @@
     <string name="action_settings">Settings</string>
     <string name="textview">TextView</string>
 
+    <string name="tvLatitude">TextView</string>
+    <string name="tvLongitude">TextView</string>
+    <string name="tvAccuracy">TextView</string>
+    <string name="tvSpeed">TextView</string>
+    <string name="tbLocationUpdates">TextView</string>
+
     <string name="speed">Speed</string>
     <string name="accuracy">Accuracy</string>
     <string name="longitude">Longitude</string>

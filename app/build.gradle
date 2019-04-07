@@ -28,6 +28,8 @@ android {
         exclude 'META-INF/ASL2.0'
 
     }
+
+    useLibrary 'org.apache.http.legacy'
 }
 
 dependencies {
@@ -44,5 +46,6 @@ dependencies {
     /* added google play location API listed https:developers.google.com/android/guides/setup --> */
     implementation 'com.google.android.gms:play-services-location:16.0.0'
     //implementation 'androidx.appcompat:appcompat:1.0.2'
+
 }
 

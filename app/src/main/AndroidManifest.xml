@@ -6,6 +6,11 @@
     <!-- add ask for permission to use location services -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
+    <!-- add ask for permission to use internet access to send data -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
