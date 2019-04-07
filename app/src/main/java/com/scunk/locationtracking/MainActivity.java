@@ -139,10 +139,10 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             speedTV.setText("No speed available");
                         }
-                        postToDb();
-                        postToDb2(latitude, longitude);
+                        //postToDb();
+                        //postToDb2(latitude, longitude);
                         postToDb3(latitude, longitude);
-                        new MyHttpRequestTask().execute(latitude,longitude);
+                        //new MyHttpRequestTask().execute(latitude,longitude);
                     }
                 }
             });
@@ -179,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         //postToDb();
                         //new MyHttpRequestTask().execute(latitude,longitude);
+                        //postToDb3(latitude, longitude);
                     }
                 }
             }
@@ -284,15 +285,9 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
-    private void postToDb3(String latitude, String longitude) {
+    private void postToDb3(final String latitude, final String longitude) {
 
         String url = "http://192.168.0.14/android_connect/backend.php";
-
-        Map<String, String> jsonLatLong = new HashMap<>();
-
-        jsonLatLong.put("latitude", latitude);
-        jsonLatLong.put("longitude", longitude);
-
 
         StringRequest strRequest = new StringRequest(Request.Method.POST, url,
                 new Response.Listener<String>()
@@ -317,8 +312,8 @@ public class MainActivity extends AppCompatActivity {
             {
                 Map<String, String> jsonLatLong = new HashMap<>();
 
-                jsonLatLong.put("latitude", "56.789123");
-                jsonLatLong.put("longitude", "-6.12345");
+                jsonLatLong.put("latitude", latitude);
+                jsonLatLong.put("longitude", longitude);
                 return jsonLatLong;
             }
         };
