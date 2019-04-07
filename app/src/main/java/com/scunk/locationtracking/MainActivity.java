@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -20,6 +21,13 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -27,30 +35,29 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+import static android.support.constraint.Constraints.TAG;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -70,6 +77,11 @@ public class MainActivity extends AppCompatActivity {
     private LocationCallback locationCallback;
     private boolean updateOn = true;
 
+    private String latitude;
+    private String longitude;
+
+    RequestQueue requestQueue;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
+        requestQueue = Volley.newRequestQueue(this);
 
 
         /* assign values to variables */
@@ -118,7 +130,8 @@ public class MainActivity extends AppCompatActivity {
 
                         //String Latitude = latitude.getText().toString();
                         //String Longitude = longitude.getText().toString();
-
+                        latitude = String.valueOf(location.getLatitude());
+                        longitude = String.valueOf(location.getLongitude());
 
                         if (location.hasSpeed()) {
                             speedTV.setText(String.valueOf(location.getSpeed() + "m/s"));
@@ -126,7 +139,9 @@ public class MainActivity extends AppCompatActivity {
                             speedTV.setText("No speed available");
                         }
                         postToDb();
-
+                        postToDb2(latitude, longitude);
+                        postToDb3(latitude, longitude);
+                        new MyHttpRequestTask().execute(latitude,longitude);
                     }
                 }
             });
@@ -142,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
 
         //when location is changed
         locationCallback = new LocationCallback() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
@@ -152,16 +168,16 @@ public class MainActivity extends AppCompatActivity {
                         longitudeTV.setText(String.valueOf(location.getLongitude()));
                         accuracyTV.setText(String.valueOf(location.getAccuracy()));
 
-
-                        //String latitude = String.valueOf(location.getLatitude());
-                        //String longitude = String.valueOf(location.getLongitude());
+                        latitude = String.valueOf(location.getLatitude());
+                        longitude = String.valueOf(location.getLongitude());
 
                         if (location.hasSpeed()) {
                             speedTV.setText(String.valueOf(location.getSpeed() + "m/s"));
                         } else {
                             speedTV.setText("No speed");
                         }
-                        //postToDb(latitude, longitude);
+                        //postToDb();
+                        //new MyHttpRequestTask().execute(latitude,longitude);
                     }
                 }
             }
@@ -180,20 +196,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
 // https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void postToDb() {
-
         try {
 
-            URL url = new URL("http://localhost/android_connect/backend.php");
+            URL url = new URL("http://192.168.0.14/android_connect/backend.php");
 
             String charset = StandardCharsets.UTF_8.name();
             String latitude = "value1";
             String longitude = "value2";
 
-            String query = String.format("latitude=%1$s&longitude=%2$s",
+            String query = String.format("%1$s:%2$s",
                     URLEncoder.encode(latitude, charset),
                     URLEncoder.encode(longitude, charset));
 
@@ -203,43 +219,104 @@ public class MainActivity extends AppCompatActivity {
             connection.setRequestProperty("Accept-Charset", charset);
             //connection.setRequestProperty("Key", "Value");
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
+
+            connection.setRequestProperty("Content-Length", Integer.toString(query.getBytes(charset).length));
+
             connection.setFixedLengthStreamingMode(query.getBytes(charset).length);
             connection.setChunkedStreamingMode(0);
 
             //connection.connect();
 
             //try with resources
-            try (OutputStream outputPost = connection.getOutputStream()) {
+            try (OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream())) {
 
-                //BufferedOutputStream outputPost = new BufferedOutputStream(outputStream);
-
-                outputPost.write(query.getBytes(charset));
+                OutputStreamWriter outputPost = new OutputStreamWriter(outputStream);
+                outputPost.write(query);
                 outputPost.flush();
                 outputPost.close();
-
-                InputStream in = new BufferedInputStream(connection.getInputStream());
-                in.read();
             }
-            //OutputStream outputPost = new BufferedOutputStream(connection.getOutputStream());
-            //writeStream(outputPost);
-
-           // outputPost.flush();
-           // outputPost.close();
-
-        } catch (Exception e) {
-            //System.out.println(e);
-            // some networking error
+        }  catch (Exception e) {
+                e.printStackTrace();
         }
     };
 
 
 
-  /*  private void writeStream(OutputStream outputPost){
-        String output = "Hello world";
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void postToDb2(String latitude, String longitude) {
+        try {
 
-        outputPost.write(output.getBytes());
-        outputPost.flush();
-    }; */
+            URL url = new URL("http://192.168.0.14/android_connect/backend.php");
+
+            String charset = StandardCharsets.UTF_8.name();
+
+            String query = String.format("%1$s:%2$s",
+                    URLEncoder.encode(latitude, charset),
+                    URLEncoder.encode(longitude, charset));
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoOutput(true); // Triggers POST.
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Accept-Charset", charset);
+            //connection.setRequestProperty("Key", "Value");
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
+
+            connection.setRequestProperty("Content-Length", Integer.toString(query.getBytes(charset).length));
+
+            connection.setFixedLengthStreamingMode(query.getBytes(charset).length);
+            connection.setChunkedStreamingMode(0);
+
+            //connection.connect();
+
+            //try with resources
+            try (OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream())) {
+
+                OutputStreamWriter outputPost = new OutputStreamWriter(outputStream);
+                outputPost.write(query);
+                outputPost.flush();
+                outputPost.close();
+            }
+        }  catch (Exception e) {
+            e.printStackTrace();
+        }
+    };
+
+
+    private void postToDb3(String latitude, String longitude) {
+
+        String url = "http://192.168.0.14/android_connect/backend.php";
+
+        Map<String, String> jsonLatLong = new HashMap<String, String>();
+
+        jsonLatLong.put("latitude", latitude);
+        jsonLatLong.put("longitude", longitude);
+
+        JsonObjectRequest postRequest = new JsonObjectRequest( Request.Method.POST, url,
+
+                new JSONObject(jsonLatLong),
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        //   Handle Error
+                    }
+                }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<String, String>();
+                headers.put("Content-Type", "application/json; charset=utf-8");
+                headers.put("User-agent", System.getProperty("http.agent"));
+                return headers;
+            }
+        };
+        requestQueue.add(postRequest);
+
+    };
 
 
 
@@ -311,41 +388,55 @@ public class MainActivity extends AppCompatActivity {
     }
 }
 
-    /*private void postToDb() {
+class MyHttpRequestTask extends AsyncTask<String,Integer,String> {
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @Override
+    protected String doInBackground(String... params) {
+        String latitude = params[0];
+        String longitude = params[1];
+        String query = null;
+        query = String.format("%1$s:%2$s", latitude, longitude);
 
         try {
+            URL url = new URL("http://192.168.0.14/android_connect/backend.php");
+            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+            // setting the  Request Method Type
+            httpURLConnection.setRequestMethod("POST");
+            // adding the headers for request
+            httpURLConnection.setRequestProperty("Content-Type", "application/json");
+            try{
+                //to tell the connection object that we will be wrting some data on the server and then will fetch the output result
+                httpURLConnection.setDoOutput(true);
+                // this is used for just in case we don't know about the data size associated with our request
+                httpURLConnection.setChunkedStreamingMode(0);
 
-            /*
+                // to write tha data in our request
+                OutputStream outputStream = new BufferedOutputStream(httpURLConnection.getOutputStream());
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+                outputStreamWriter.write(query);
+                outputStreamWriter.flush();
+                outputStreamWriter.close();
 
-            // Create a new HttpClient and Post request
-            HttpClient httpClient = new DefaultHttpClient();
+                // to log the response code of your request
+                Log.d(TAG, "MyHttpRequestTask doInBackground : " +httpURLConnection.getResponseCode());
+                // to log the response message from your server after you have tried the request.
+                Log.d(TAG, "MyHttpRequestTask doInBackground : " +httpURLConnection.getResponseMessage());
 
-            HttpPost httpPost = new HttpPost("http://localhost/android_connect/backend.php");
 
-            // Add data
-            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-
-            nameValuePairs.add(new BasicNameValuePair("latitude", "test1"));
-            nameValuePairs.add(new BasicNameValuePair("longitude", "test 2"));
-
-            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-            HttpResponse response = httpClient.execute(httpPost);
-            HttpEntity resEntity = response.getEntity();
-
-            if (resEntity != null) {
-
-                String responseStr = EntityUtils.toString(resEntity).trim();
-                Log.v("MainActivity.java", "Response: " +  responseStr);
-
-                // you can add an if statement here and do other actions based on the response
+            }catch (Exception e){
+                e.printStackTrace();
+            }finally {
+                // this is done so that there are no open connections left when this task is going to complete
+                httpURLConnection.disconnect();
             }
 
-        } catch (ClientProtocolException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
+
+        }catch (Exception e){
             e.printStackTrace();
         }
-    }; */
+
+        return null;
+    }
+}
+

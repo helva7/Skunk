@@ -46,6 +46,7 @@ dependencies {
     /* added google play location API listed https:developers.google.com/android/guides/setup --> */
     implementation 'com.google.android.gms:play-services-location:16.0.0'
     //implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.android.volley:volley:1.1.0'
 
 }
 
