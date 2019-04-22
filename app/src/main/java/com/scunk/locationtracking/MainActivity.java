@@ -51,14 +51,16 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import static android.support.constraint.Constraints.TAG;
+import java.text.SimpleDateFormat;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -69,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView longitudeTV;
     private TextView accuracyTV;
     private TextView speedTV;
+    private TextView datetimeTV;
 
 
     /* create an instance of a client */
@@ -80,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
 
     private String latitude;
     private String longitude;
+    private String datetime;
+    private String speed;
 
     RequestQueue requestQueue;
 
@@ -99,7 +104,10 @@ public class MainActivity extends AppCompatActivity {
         longitudeTV = findViewById(R.id.tvLongitude);
         accuracyTV = findViewById(R.id.tvAccuracy);
         speedTV = findViewById(R.id.tvSpeed);
+        datetimeTV = findViewById(R.id.tvDatetime);
 
+        //format date and time appearance
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
         /*
         https://developers.google.com/android/reference/com/google/android/gms/location/LocationRequest --> info on priority
@@ -117,14 +125,14 @@ public class MainActivity extends AppCompatActivity {
 
 
         /* added permission check */
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // if location permission is granted, update location details
+        // if location permission is granted, update location details
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
                 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
                 @Override
                 public void onSuccess(Location location) {
                     if (location != null) {
-                       //fusedLocationProviderClient.requestLocationUpdates
+                        //fusedLocationProviderClient.requestLocationUpdates
                         latitudeTV.setText(String.valueOf(location.getLatitude()));
                         longitudeTV.setText(String.valueOf(location.getLongitude()));
                         accuracyTV.setText(String.valueOf(location.getAccuracy()));
@@ -139,14 +147,19 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             speedTV.setText("No speed available");
                         }
+                        speed = String.valueOf(location.getSpeed());
+
+                        datetime = simpleDateFormat.format(new Date());
+                        datetimeTV.setText(datetime);
+
                         //postToDb();
                         //postToDb2(latitude, longitude);
-                        postToDb3(latitude, longitude);
+                        postToDb3(latitude, longitude, datetime, speed);
                         //new MyHttpRequestTask().execute(latitude,longitude);
                     }
                 }
             });
-        } else {
+        else {
             /*
             reguest permissions to proceed with application functioning
             runtime version check as some lower versions don't require permission check
@@ -177,9 +190,13 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             speedTV.setText("No speed");
                         }
+
+                        datetime = simpleDateFormat.format(new Date());
+                        datetimeTV.setText(datetime);
+
                         //postToDb();
                         //new MyHttpRequestTask().execute(latitude,longitude);
-                        //postToDb3(latitude, longitude);
+                        postToDb3(latitude, longitude, datetime, speed);
                     }
                 }
             }
@@ -198,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
+/*
 // https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -283,9 +300,9 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     };
+*/
 
-
-    private void postToDb3(final String latitude, final String longitude) {
+    private void postToDb3(final String latitude, final String longitude, final String datetime, final String speed) {
 
         String url = "http://192.168.0.14/android_connect/backend.php";
 
@@ -310,11 +327,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams()
             {
-                Map<String, String> jsonLatLong = new HashMap<>();
+                Map<String, String> jsonLatLongDatetime = new HashMap<>();
 
-                jsonLatLong.put("latitude", latitude);
-                jsonLatLong.put("longitude", longitude);
-                return jsonLatLong;
+                jsonLatLongDatetime.put("latitude", latitude);
+                jsonLatLongDatetime.put("longitude", longitude);
+                jsonLatLongDatetime.put("datetime", datetime);
+                jsonLatLongDatetime.put("speed", speed);
+
+                return jsonLatLongDatetime;
             }
         };
 
@@ -392,6 +412,7 @@ public class MainActivity extends AppCompatActivity {
     }
 }
 
+/*
 class MyHttpRequestTask extends AsyncTask<String,Integer,String> {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -444,3 +465,4 @@ class MyHttpRequestTask extends AsyncTask<String,Integer,String> {
     }
 }
 
+*/

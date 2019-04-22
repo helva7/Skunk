@@ -8,8 +8,10 @@
     <string name="tvAccuracy">TextView</string>
     <string name="tvSpeed">TextView</string>
     <string name="tbLocationUpdates">TextView</string>
+    <string name="tvDatetime">TextView</string>
 
     <string name="speed">Speed</string>
+    <string name="datetime">Date and time</string>
     <string name="accuracy">Accuracy</string>
     <string name="longitude">Longitude</string>
     <string name="latitude">Latitude</string>
